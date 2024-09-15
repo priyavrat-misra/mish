@@ -1,0 +1,88 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define BUFF_INI_SIZE 16
+#define GROWTH_FACTOR 2
+#define ARG_DLIMITERS " \t\r\n"
+
+char* read() {
+    int buffer_size = BUFF_INI_SIZE * sizeof(char);
+    int buffer_pos = 0;
+    char* buffer = malloc(buffer_size);
+    if (!buffer) {
+        fprintf(stderr, "malloc failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    int c;
+    while (1) {
+        c = getchar();
+        if (c == EOF || c == '\n') {
+            buffer[buffer_pos] = '\0';
+            return buffer;
+        } else {
+            buffer[buffer_pos] = c;
+        }
+
+        if (++buffer_pos == buffer_size) {
+            buffer_size *= GROWTH_FACTOR;
+            buffer = realloc(buffer, buffer_size);
+            if (!buffer) {
+                fprintf(stderr, "realloc failed\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+
+    return buffer;
+}
+
+char** parse(char* cmd) {
+    int buffer_size = BUFF_INI_SIZE * sizeof(char*);
+    int buffer_pos = 0;
+    char** buffer = malloc(buffer_size);
+    if (!buffer) {
+        fprintf(stderr, "malloc failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    char* arg = strtok(cmd, ARG_DLIMITERS);
+    while (arg) {
+        buffer[buffer_pos] = arg;
+        if (++buffer_pos == buffer_size) {
+            buffer_size *= GROWTH_FACTOR;
+            buffer = realloc(buffer, buffer_size);
+            if (!buffer) {
+                fprintf(stderr, "realloc failed\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+        arg = strtok(NULL, ARG_DLIMITERS);
+    }
+
+    buffer[buffer_pos] = NULL;
+    return buffer;
+}
+
+int execute(char** args) {
+    return 0;
+}
+
+void loop(void) {
+    char* cmd;
+    char** args;
+    int status;
+
+    do {
+        printf("$ ");
+        cmd = read();
+        args = parse(cmd);
+        status = execute(args);
+    } while (status);
+}
+
+int main(int argc, char* argv[]) {
+    loop();
+    return EXIT_SUCCESS;
+}
