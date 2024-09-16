@@ -8,3 +8,4 @@ mish: main.c
 
 clean:
 	rm mish
+

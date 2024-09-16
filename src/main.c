@@ -1,12 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #define BUFF_INI_SIZE 16
 #define GROWTH_FACTOR 2
 #define ARG_DLIMITERS " \t\r\n"
 
-char* read() {
+char* getcmd() {
     int buffer_size = BUFF_INI_SIZE * sizeof(char);
     int buffer_pos = 0;
     char* buffer = malloc(buffer_size);
@@ -18,7 +20,10 @@ char* read() {
     int c;
     while (1) {
         c = getchar();
-        if (c == EOF || c == '\n') {
+        if (c == EOF) {
+            printf("\n");
+            exit(EXIT_SUCCESS);
+        } else if (c == '\n') {
             buffer[buffer_pos] = '\0';
             return buffer;
         } else {
@@ -66,7 +71,22 @@ char** parse(char* cmd) {
 }
 
 int execute(char** args) {
-    return 0;
+    int status;
+    int pid = fork();
+    if (pid < 0) {
+        fprintf(stderr, "fork failed\n");
+    } else if (pid == 0) {
+        if (execvp(args[0], args) == -1) {
+            fprintf(stderr, "exec failed\n");
+            exit(EXIT_FAILURE);
+        }
+    } else {
+        do {
+            waitpid(pid, &status, WUNTRACED);
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    }
+
+    return 1;
 }
 
 void loop(void) {
@@ -76,9 +96,12 @@ void loop(void) {
 
     do {
         printf("$ ");
-        cmd = read();
+        cmd = getcmd();
         args = parse(cmd);
         status = execute(args);
+
+        free(cmd);
+        free(args);
     } while (status);
 }
 
