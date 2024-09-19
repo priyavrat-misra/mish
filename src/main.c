@@ -8,7 +8,40 @@
 #define GROWTH_FACTOR 2
 #define ARG_DLIMITERS " \t\r\n"
 
-char* getcmd() {
+int cd(char** args);
+int quit(char** args);
+
+char* builtin_str[] = {
+    "cd",
+    "exit"
+};
+
+int (*builtin_func[])(char**) = {
+    &cd,
+    &quit
+};
+
+int num_builtins() {
+    return sizeof(builtin_str) / sizeof(char*);
+}
+
+int cd(char** args) {
+    if (args[1] == NULL) {
+        fprintf(stderr, "insufficient arguments\n");
+    } else {
+        if (chdir(args[1]) != 0) {
+            fprintf(stderr, "invalid directory\n");
+        }
+    }
+
+    return 1;
+}
+
+int quit(char** args) {
+    return 0;
+}
+
+char* getcmd(void) {
     int buffer_size = BUFF_INI_SIZE * sizeof(char);
     int buffer_pos = 0;
     char* buffer = malloc(buffer_size);
@@ -70,7 +103,7 @@ char** parse(char* cmd) {
     return buffer;
 }
 
-int execute(char** args) {
+int launch(char** args) {
     int status;
     int pid = fork();
     if (pid < 0) {
@@ -87,6 +120,18 @@ int execute(char** args) {
     }
 
     return 1;
+}
+
+int execute(char** args) {
+    if (args[0] == NULL) {
+        return 1;
+    } else {
+        for (int i = 0; i < num_builtins(); ++i)
+            if (strcmp(args[0], builtin_str[i]) == 0)
+                return builtin_func[i](args);
+    }
+
+    return launch(args);
 }
 
 void loop(void) {
