@@ -4,6 +4,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#define SHELL_NM "mish"
 #define BUFF_INI_SIZE 16
 #define GROWTH_FACTOR 2
 #define ARG_DLIMITERS " \t\r\n"
@@ -27,10 +28,10 @@ int num_builtins() {
 
 int cd(char** args) {
     if (args[1] == NULL) {
-        fprintf(stderr, "insufficient arguments\n");
+        fprintf(stderr, "%s: insufficient arguments\n", SHELL_NM);
     } else {
         if (chdir(args[1]) != 0) {
-            fprintf(stderr, "invalid directory\n");
+            perror(SHELL_NM);
         }
     }
 
@@ -46,7 +47,7 @@ char* getcmd(void) {
     int buffer_pos = 0;
     char* buffer = malloc(buffer_size);
     if (!buffer) {
-        fprintf(stderr, "malloc failed\n");
+        perror(SHELL_NM);
         exit(EXIT_FAILURE);
     }
 
@@ -67,7 +68,7 @@ char* getcmd(void) {
             buffer_size *= GROWTH_FACTOR;
             buffer = realloc(buffer, buffer_size);
             if (!buffer) {
-                fprintf(stderr, "realloc failed\n");
+                perror(SHELL_NM);
                 exit(EXIT_FAILURE);
             }
         }
@@ -81,7 +82,7 @@ char** parse(char* cmd) {
     int buffer_pos = 0;
     char** buffer = malloc(buffer_size);
     if (!buffer) {
-        fprintf(stderr, "malloc failed\n");
+        perror(SHELL_NM);
         exit(EXIT_FAILURE);
     }
 
@@ -92,7 +93,7 @@ char** parse(char* cmd) {
             buffer_size *= GROWTH_FACTOR;
             buffer = realloc(buffer, buffer_size);
             if (!buffer) {
-                fprintf(stderr, "realloc failed\n");
+                perror(SHELL_NM);
                 exit(EXIT_FAILURE);
             }
         }
@@ -107,10 +108,10 @@ int launch(char** args) {
     int status;
     int pid = fork();
     if (pid < 0) {
-        fprintf(stderr, "fork failed\n");
+        perror(SHELL_NM);
     } else if (pid == 0) {
         if (execvp(args[0], args) == -1) {
-            fprintf(stderr, "exec failed\n");
+            perror(SHELL_NM);
             exit(EXIT_FAILURE);
         }
     } else {
