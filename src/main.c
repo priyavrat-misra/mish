@@ -1,13 +1,31 @@
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
-#define SHELL_NM "mish"
-#define BUFF_INI_SIZE 16
-#define GROWTH_FACTOR 2
-#define ARG_DLIMITERS " \t\r\n"
+#define PRINT_ERR(e)    fprintf(stderr, ANSI_ESC(COLOR_RED) SHELL_NM ": %s" ANSI_RESET "\n", e)
+#define PRINT_WRN(w)    fprintf(stdout, ANSI_ESC(COLOR_YELLOW) SHELL_NM ": %s" ANSI_RESET "\n", w)
+#define PRINT_ERRNO()   PRINT_ERR(strerror(errno))
+
+#define STR(s) #s
+#define ANSI_ESC(c)     "\033[3" STR(c) "m"
+#define ANSI_RESET      "\033[0m"
+
+#define COLOR_BLACK     0
+#define COLOR_RED       1
+#define COLOR_GREEN     2
+#define COLOR_YELLOW    3
+#define COLOR_BLUE      4
+#define COLOR_MAGENTA   5
+#define COLOR_CYAN      6
+#define COLOR_WHITE     7
+
+#define SHELL_NM        "mish"
+#define BUFF_INI_SIZE   16
+#define GROWTH_FACTOR   2
+#define ARG_DLIMITERS   " \t\r\n"
 
 int cd(char** args);
 int quit(char** args);
@@ -28,10 +46,10 @@ int num_builtins() {
 
 int cd(char** args) {
     if (args[1] == NULL) {
-        fprintf(stderr, "%s: insufficient arguments\n", SHELL_NM);
+        PRINT_ERR("insufficient arguments");
     } else {
         if (chdir(args[1]) != 0) {
-            perror(SHELL_NM);
+            PRINT_ERRNO();
         }
     }
 
@@ -47,7 +65,7 @@ char* getcmd(void) {
     int buffer_pos = 0;
     char* buffer = malloc(buffer_size);
     if (!buffer) {
-        perror(SHELL_NM);
+        PRINT_ERRNO();
         exit(EXIT_FAILURE);
     }
 
@@ -68,7 +86,7 @@ char* getcmd(void) {
             buffer_size *= GROWTH_FACTOR;
             buffer = realloc(buffer, buffer_size);
             if (!buffer) {
-                perror(SHELL_NM);
+                PRINT_ERRNO();
                 exit(EXIT_FAILURE);
             }
         }
@@ -82,7 +100,7 @@ char** parse(char* cmd) {
     int buffer_pos = 0;
     char** buffer = malloc(buffer_size);
     if (!buffer) {
-        perror(SHELL_NM);
+        PRINT_ERRNO();
         exit(EXIT_FAILURE);
     }
 
@@ -93,7 +111,7 @@ char** parse(char* cmd) {
             buffer_size *= GROWTH_FACTOR;
             buffer = realloc(buffer, buffer_size);
             if (!buffer) {
-                perror(SHELL_NM);
+                PRINT_ERRNO();
                 exit(EXIT_FAILURE);
             }
         }
@@ -108,10 +126,10 @@ int launch(char** args) {
     int status;
     int pid = fork();
     if (pid < 0) {
-        perror(SHELL_NM);
+        PRINT_ERRNO();
     } else if (pid == 0) {
         if (execvp(args[0], args) == -1) {
-            perror(SHELL_NM);
+            PRINT_ERRNO();
             exit(EXIT_FAILURE);
         }
     } else {
@@ -141,7 +159,7 @@ void loop(void) {
     int status;
 
     do {
-        printf("$ ");
+        printf("\033[32m$\033[0m ");
         cmd = getcmd();
         args = parse(cmd);
         status = execute(args);
