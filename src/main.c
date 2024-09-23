@@ -5,9 +5,11 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#define PRINT_ERR(e)    fprintf(stderr, ANSI_ESC(COLOR_RED) SHELL_NM ": %s" ANSI_RESET "\n", e)
-#define PRINT_WRN(w)    fprintf(stdout, ANSI_ESC(COLOR_YELLOW) SHELL_NM ": %s" ANSI_RESET "\n", w)
+#define PRINT_ERR(e)    fprintf(stderr, SET_COLOR(SHELL_NM ": %s\n", COLOR_RED), e)
+#define PRINT_WRN(w)    fprintf(stdout, SET_COLOR(SHELL_NM ": %s\n", COLOR_YELLOW), w)
 #define PRINT_ERRNO()   PRINT_ERR(strerror(errno))
+
+#define SET_COLOR(s, c) ANSI_ESC(c) s ANSI_RESET
 
 #define STR(s) #s
 #define ANSI_ESC(c)     "\033[3" STR(c) "m"
@@ -159,7 +161,7 @@ void loop(void) {
     int status;
 
     do {
-        printf("\033[32m$\033[0m ");
+        printf(SET_COLOR("$ ", COLOR_GREEN));
         cmd = getcmd();
         args = parse(cmd);
         status = execute(args);
