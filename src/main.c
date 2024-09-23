@@ -1,4 +1,7 @@
 #include <errno.h>
+#include <limits.h>
+#include <linux/limits.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,6 +32,34 @@
 #define GROWTH_FACTOR   2
 #define ARG_DLIMITERS   " \t\r\n"
 
+
+char* user;
+char host[HOST_NAME_MAX];
+char cwd[PATH_MAX];
+
+char* getusername() {
+    struct passwd* pw = getpwuid(geteuid());
+    if (!pw) {
+        PRINT_ERRNO();
+        exit(EXIT_FAILURE);
+    }
+
+    return pw -> pw_name;
+}
+
+void init(void) {
+    if (!(user = getusername()) || gethostname(host, HOST_NAME_MAX) || !getcwd(cwd, PATH_MAX)) {
+        PRINT_ERRNO();
+        exit(EXIT_FAILURE);
+    }
+}
+
+void print_ps(void) {
+    printf(SET_COLOR("%s", COLOR_GREEN) SET_COLOR(" @ %s %s\n", COLOR_CYAN), user, host, cwd);
+    printf(SET_COLOR("$ ", COLOR_GREEN));
+}
+
+
 int cd(char** args);
 int quit(char** args);
 
@@ -47,10 +78,10 @@ int num_builtins() {
 }
 
 int cd(char** args) {
-    if (args[1] == NULL) {
+    if (!args[1]) {
         PRINT_ERR("insufficient arguments");
     } else {
-        if (chdir(args[1]) != 0) {
+        if (chdir(args[1]) != 0 || !getcwd(cwd, PATH_MAX)) {
             PRINT_ERRNO();
         }
     }
@@ -144,7 +175,7 @@ int launch(char** args) {
 }
 
 int execute(char** args) {
-    if (args[0] == NULL) {
+    if (!args[0]) {
         return 1;
     } else {
         for (int i = 0; i < num_builtins(); ++i)
@@ -161,7 +192,7 @@ void loop(void) {
     int status;
 
     do {
-        printf(SET_COLOR("$ ", COLOR_GREEN));
+        print_ps();
         cmd = getcmd();
         args = parse(cmd);
         status = execute(args);
@@ -172,6 +203,7 @@ void loop(void) {
 }
 
 int main(int argc, char* argv[]) {
+    init();
     loop();
     return EXIT_SUCCESS;
 }
