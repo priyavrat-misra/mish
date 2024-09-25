@@ -28,9 +28,8 @@
 #define COLOR_WHITE     7
 
 #define SHELL_NM        "mish"
-#define BUFF_INI_SIZE   16
+#define BUFF_INI_SIZE   8
 #define GROWTH_FACTOR   2
-#define ARG_DLIMITERS   " \t\r\n"
 
 
 char* user;
@@ -128,7 +127,7 @@ char* getcmd(void) {
     return buffer;
 }
 
-char** parse(char* cmd) {
+char** tokenize(char* cmd) {
     int buffer_size = BUFF_INI_SIZE * sizeof(char*);
     int buffer_pos = 0;
     char** buffer = malloc(buffer_size);
@@ -137,18 +136,40 @@ char** parse(char* cmd) {
         exit(EXIT_FAILURE);
     }
 
-    char* arg = strtok(cmd, ARG_DLIMITERS);
-    while (arg) {
-        buffer[buffer_pos] = arg;
-        if (++buffer_pos == buffer_size) {
-            buffer_size *= GROWTH_FACTOR;
-            buffer = realloc(buffer, buffer_size);
-            if (!buffer) {
-                PRINT_ERRNO();
-                exit(EXIT_FAILURE);
-            }
+    enum State { CHAR, SPACE, QUOTE } state = SPACE;
+    while (*cmd) {
+        switch (state) {
+            case SPACE:
+                if (*cmd == '\"') {
+                    buffer[buffer_pos++] = cmd + 1;
+                    state = QUOTE;
+                } else if (*cmd != ' ') {
+                    buffer[buffer_pos++] = cmd;
+                    state = CHAR;
+                }
+                if (buffer_pos == buffer_size) {
+                    buffer_size *= GROWTH_FACTOR;
+                    buffer = realloc(buffer, buffer_size);
+                    if (!buffer) {
+                        PRINT_ERRNO();
+                        exit(EXIT_FAILURE);
+                    }
+                }
+                break;
+            case CHAR:
+                if (*cmd == ' ') {
+                    *cmd = '\0';
+                    state = SPACE;
+                }
+                break;
+            case QUOTE:
+                if (*cmd == '\"') {
+                    *cmd = '\0';
+                    state = SPACE;
+                }
+                break;
         }
-        arg = strtok(NULL, ARG_DLIMITERS);
+        ++cmd;
     }
 
     buffer[buffer_pos] = NULL;
@@ -194,7 +215,7 @@ void loop(void) {
     do {
         print_ps();
         cmd = getcmd();
-        args = parse(cmd);
+        args = tokenize(cmd);
         status = execute(args);
 
         free(cmd);
