@@ -106,6 +106,7 @@ char* getcmd(void) {
         c = getchar();
         if (c == EOF) {
             printf("\n");
+            free(buffer);
             exit(EXIT_SUCCESS);
         } else if (c == '\n') {
             buffer[buffer_pos] = '\0';
@@ -136,7 +137,7 @@ char** tokenize(char* cmd) {
         exit(EXIT_FAILURE);
     }
 
-    enum State { CHAR, SPACE, QUOTE } state = SPACE;
+    enum State { SPACE, CHAR, QUOTE } state = SPACE;
     while (*cmd) {
         switch (state) {
             case SPACE:
