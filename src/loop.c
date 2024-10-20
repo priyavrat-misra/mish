@@ -55,6 +55,7 @@ char** tokenize(char* cmd) {
     char** buffer = malloc(buffer_size);
     if (!buffer) {
         PRINT_ERRNO();
+        free(cmd);
         exit(EXIT_FAILURE);
     }
 
@@ -74,6 +75,7 @@ char** tokenize(char* cmd) {
                     buffer = realloc(buffer, buffer_size);
                     if (!buffer) {
                         PRINT_ERRNO();
+                        free(cmd);
                         exit(EXIT_FAILURE);
                     }
                 }
@@ -106,6 +108,8 @@ int launch(char** args) {
     } else if (pid == 0) {
         if (execvp(args[0], args) == -1) {
             PRINT_ERRNO();
+            free(*args);
+            free(args);
             exit(EXIT_FAILURE);
         }
     } else {
