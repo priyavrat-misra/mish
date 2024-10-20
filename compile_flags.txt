@@ -1,0 +1,4 @@
+-xc
+-I
+./include
+-Wall

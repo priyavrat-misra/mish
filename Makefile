@@ -1,17 +1,32 @@
 # -*- MakeFile -*-
 
-TARGET=mish
+SRC_DIR := src
+INC_DIR := include
+OBJ_DIR := build
 
-all: $(TARGET)
+SRCS := $(wildcard $(SRC_DIR)/*.c)
+OBJS := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRCS))
 
-$(TARGET): src/main.c
-	gcc -O2 -o $(TARGET) $^
+OPT := -O3
+CFLAGS += -c -Wall -I$(INC_DIR) $(OPT)
+TARGET := mish
+
+
+.PHONY: all clean remake
+
+all: $(OBJ_DIR) $(TARGET)
+
+$(OBJ_DIR):
+	@mkdir -p $(OBJ_DIR)
+
+$(TARGET): $(OBJS)
+	$(CC) $^ -o $@
 	@strip --strip-unneeded $(TARGET)
 
-mem.test: src/main.c
-	gcc -g -Og $^ -o $(TARGET)
-	valgrind -v --leak-check=full --show-leak-kinds=all ./$(TARGET)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm $(TARGET)
+	rm -rf $(TARGET) $(OBJ_DIR)
 
+remake: clean all
